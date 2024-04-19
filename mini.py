@@ -1,11 +1,12 @@
+import argparse
 import os
 import tensorflow as tf 
 import numpy as np 
 from tensorflow import keras
 import glob
 from generate_plot import create_plot_comarison_graph
-from tensorflow.keras import layers,Model
-from discriminators import make_mini_discriminator_model, make_my_discriminator_model
+from tensorflow.keras import layers, Model
+from discriminators import make_my_discriminator_model
 
 
 def load_data(filepath):
@@ -133,39 +134,46 @@ class GanNNet(Model):
     return {"d_loss": d_loss, "g_loss": g_loss,"test_accuracy":acc,"test precision":prec,"test recall":rec}
 
 
+def get_logger_path(args):
+    os.makedirs('console_output', exist_ok=True)
+    if args.run_name:
+      logger_path = f'console_output/training_{args.run_name}.csv'
+    else:
+      logger_path = f'console_output/training_{os.path.basename(args.data_dir)}.csv'
+    return logger_path
+
 if __name__ == '__main__':
+  # check if gpu is available
   device_name = tf.test.gpu_device_name()
   if device_name != '/device:GPU:0':
     raise SystemError('GPU device not found')
   print('Found GPU at: {}'.format(device_name))
 
-  # Load the PIMs
+  parser = argparse.ArgumentParser()
+  parser.add_argument('data_dir', help='Directory containing the training data.')
+  parser.add_argument('run_name', default='', help='Name of the run, will be used for the log file.')
+  parser.add_argument('--test_split', type=float, default=0.1, required=False, help='Fraction of the data to use for the test set.')
+  parser.add_argument('--val_split', type=float, default=0.3, required=False, help='Fraction of the data to use for the validation set.')
+  parser.add_argument('--batch_size', type=int, default=64, required=False, help='Batch size to use for training.')
+  parser.add_argument('--drop_reminder', default=True, action='store_true', required=False, help='Drop the last batch if it is not full. Default True, action is store_true which means that if this argument is not specified it will be treated as True.')
 
-  CLASS_NUM = 5
-  TEST_PER = 0.1
-  VAL_PER = 0.3
-  DROP_REMAINDER = True
-  # BUFFER_SIZE = 60000
-  BATCH_SIZE = 64
-
+  args = parser.parse_args()
+  # fix data directory path 
+  if args.data_dir[-1] != '/':
+      args.data_dir += '/'
+      
+  files = glob.glob(args.data_dir + "*")
+  CLASS_NUM = len(files)
+  BATCH_SIZE = args.batch_size
+  
   # GAN random input vector size
   latent_dim = 32*32*3
-
-  INPUT_SHAPE = (1,32,32)
-
-  
   data = []
   labels = []
   labelIndex = -1
-  run_name = 'test_before_upload'
-  
-  """ mini flowpic Berkeley (quic text) """
-  files = glob.glob("datasets/mini_flowpic_quic_text/*")
-
-  """ mini flowpic QUIC Paris-Est Créteil (quic pcaps) """
-  # files = glob.glob("datasets/mini_flowpic_quic_pcaps/*")
-
+  # Load the PIMs
   for file in files:
+    print(f"working on: {file}")
     if file.endswith('.npy'):
       labelIndex += 1
       dataForFile = load_data(file)
@@ -176,8 +184,8 @@ if __name__ == '__main__':
   data = np.vstack(data)
   labels = np.hstack(labels)
   datalen = data.__len__()
-  testSize = int(TEST_PER * datalen)
-  valSize = int(TEST_PER * datalen)
+  testSize = int(args.test_split * datalen)
+  valSize = int(args.val_split * datalen)
   trainSize = datalen - testSize
 
 
@@ -204,10 +212,10 @@ if __name__ == '__main__':
 
   train_dataset = tf.data.Dataset.from_tensor_slices((train_data,train_labels))
   train_dataset = train_dataset.shuffle(datalen)
-  train_dataset = train_dataset.batch(BATCH_SIZE,drop_remainder = DROP_REMAINDER)
+  train_dataset = train_dataset.batch(BATCH_SIZE,drop_remainder = args.drop_reminder)
 
   test_dataset = tf.data.Dataset.from_tensor_slices((test_data,test_labels))
-  test_dataset = test_dataset.batch(BATCH_SIZE,  drop_remainder = DROP_REMAINDER)
+  test_dataset = test_dataset.batch(BATCH_SIZE,  drop_remainder = args.drop_reminder)
 
   print(train_dataset.__len__())
   print(test_dataset.__len__())
@@ -245,7 +253,7 @@ if __name__ == '__main__':
 
   epochs = 200
 
-  csv_logger = keras.callbacks.CSVLogger(f'console_output/training_{run_name}.csv')
+  csv_logger = keras.callbacks.CSVLogger(get_logger_path(args))
 
   cbks = [csv_logger]
 
