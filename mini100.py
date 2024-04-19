@@ -5,7 +5,7 @@ from tensorflow import keras
 import glob
 from generate_plot import create_plot_comarison_graph
 from tensorflow.keras import layers,Model
-from discriminators import make_mini_discriminator_model, make_my_discriminator_model
+from discriminators import make_my_discriminator_model
 
 
 def load_data(filepath):
@@ -150,7 +150,7 @@ if __name__ == '__main__':
   data = []
   labels = []
   labelIndex = -1
-  run_name = 'quic_pcap_nogan'
+  run_name = 'quic_text_nogan_wtf_no_comet'
   
   """ mini flowpic Berkeley (quic text) """
   files = glob.glob("datasets/mini_flowpic_quic_text/*")
