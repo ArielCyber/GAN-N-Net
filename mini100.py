@@ -1,10 +1,11 @@
+import argparse
 import os
 import tensorflow as tf 
 import numpy as np 
 from tensorflow import keras
 import glob
 from generate_plot import create_plot_comarison_graph
-from tensorflow.keras import layers,Model
+from tensorflow.keras import layers, Model
 from discriminators import make_my_discriminator_model
 
 
@@ -78,7 +79,7 @@ def loss_values(d_real_features,fake_features,labels,label_rate):
 
 
 class GanNNet(Model):
-  def __init__(self,discriminator,generator, latent_dim,label_rate):
+  def __init__(self,discriminator,generator, latent_dim, label_rate):
     super(GanNNet,self).__init__()
     self.discriminator = discriminator
     self.generator = generator
@@ -126,39 +127,60 @@ class GanNNet(Model):
     return {"d_loss": d_loss, "g_loss": g_loss,"test_accuracy":acc,"test precision":prec,"test recall":rec}
 
 
+def get_logger_path(args):
+    os.makedirs('console_output', exist_ok=True)
+    if args.run_name:
+      logger_path = f'console_output/training_{args.run_name}.csv'
+    else:
+      logger_path = f'console_output/training_{os.path.basename(args.data_dir)}.csv'
+    return logger_path
+
+def get_model_path(args):
+    if args.run_name:
+      model_path = f'console_output/model_{args.run_name}/model.h5'
+    else:
+      model_path = f'console_output/model_{os.path.basename(args.data_dir)}/model.h5'
+    
+    os.makedirs(os.path.dirname(model_path), exist_ok=True)
+    return model_path
+
 if __name__ == '__main__':
+  # check if gpu is available
   device_name = tf.test.gpu_device_name()
   if device_name != '/device:GPU:0':
     raise SystemError('GPU device not found')
   print('Found GPU at: {}'.format(device_name))
 
-  # Load the PIMs
+  parser = argparse.ArgumentParser()
+  parser.add_argument('data_dir', help='Directory containing the training data.')
+  parser.add_argument('run_name', default='', help='Name of the run, will be used for the log file.')
+  parser.add_argument('--test_split', type=float, default=0.1, required=False, help='Fraction of the data to use for the test set.')
+  parser.add_argument('--val_split', type=float, default=0.3, required=False, help='Fraction of the data to use for the validation set.')
+  parser.add_argument('--batch_size', type=int, default=64, required=False, help='Batch size to use for training.')
+  parser.add_argument('--drop_reminder', default=True, action='store_true', required=False, help='Drop the last batch if it is not full. Default True, action is store_true which means that if this argument is not specified it will be treated as True.')
+  parser.add_argument('--label_rate', type=float, default=1, required=False, help='Rate of labels in the training data. Default is 1 (all)')
+  parser.add_argument('--epochs', type=int, default=200, required=False, help='Number of epochs to train. Default is 200.')
+  parser.add_argument('--train_rate', type=float, default=1, required=False, help='Rate of training data. Default is 1 (all)')
+  parser.add_argument('--save_model', default=False, required=False, help='Save the model after training.')
 
-  CLASS_NUM = 5
-  TEST_PER = 0.1
-  VAL_PER = 0.3
-  DROP_REMAINDER = True
-  # BUFFER_SIZE = 60000
-  BATCH_SIZE = 64
 
+  args = parser.parse_args()
+  # fix data directory path 
+  if args.data_dir[-1] != '/':
+      args.data_dir += '/'
+      
+  files = glob.glob(args.data_dir + "*")
+  CLASS_NUM = len(files)
+  BATCH_SIZE = args.batch_size
+  
   # GAN random input vector size
   latent_dim = 32*32*3
-
-  INPUT_SHAPE = (1,32,32)
-
-  
   data = []
   labels = []
   labelIndex = -1
-  run_name = 'quic_text_nogan_wtf_no_comet'
-  
-  """ mini flowpic Berkeley (quic text) """
-  files = glob.glob("datasets/mini_flowpic_quic_text/*")
-
-  """ mini flowpic QUIC Paris-Est Créteil (quic pcaps) """
-  # files = glob.glob("datasets/mini_flowpic_quic_pcaps/*")
-
+  # Load the PIMs
   for file in files:
+    print(f"working on: {file}")
     if file.endswith('.npy'):
       labelIndex += 1
       dataForFile = load_data(file)
@@ -168,46 +190,50 @@ if __name__ == '__main__':
 
   data = np.vstack(data)
   labels = np.hstack(labels)
-  datalen = data.__len__()
-  testSize = int(TEST_PER * datalen)
-  valSize = int(TEST_PER * datalen)
-  trainSize = datalen - testSize
+  data_len = data.__len__()
+  test_size = int(args.test_split * data_len)
+  val_size = int(args.val_split * args.train_rate * data_len)
+  train_size = data_len - test_size
+  train_size_using_rate = int(args.train_rate * train_size)
 
 
-  imageDim = data.shape[-1]
-  inputSize = imageDim**2
+  image_dim = data.shape[-1]
+  input_size = image_dim**2
 
-  testInds = np.random.choice(range(datalen),size=testSize, replace=False)
+  test_inds = np.random.choice(range(data_len), size=test_size, replace=False)
 
-  test_data = data[testInds]
-  test_labels = labels[testInds]
+  test_data = data[test_inds]
+  test_labels = labels[test_inds]
 
-  train_data = np.delete(data,testInds,0)
-  train_labels = np.delete(labels,testInds)
+  train_data = np.delete(data, test_inds, 0)
+  train_labels = np.delete(labels, test_inds)
 
-  train_data = tf.cast(train_data,tf.float32)
-  test_data = tf.cast(test_data,tf.float32)
+  train_data = tf.cast(train_data, tf.float32)
+  test_data = tf.cast(test_data, tf.float32)
 
-  train_labels = tf.cast(train_labels,tf.int32)
-  train_labels = tf.one_hot(train_labels,CLASS_NUM)
+  train_labels = tf.cast(train_labels, tf.int32)
+  train_labels = tf.one_hot(train_labels, CLASS_NUM)
 
-  test_labels = tf.cast(test_labels,tf.int32)
-  test_labels = tf.one_hot(test_labels,CLASS_NUM)
+  test_labels = tf.cast(test_labels, tf.int32)
+  test_labels = tf.one_hot(test_labels, CLASS_NUM)
 
 
-  train_dataset = tf.data.Dataset.from_tensor_slices((train_data,train_labels))
-  train_dataset = train_dataset.shuffle(datalen)
-  train_dataset = train_dataset.batch(BATCH_SIZE,drop_remainder = DROP_REMAINDER)
+  train_dataset = tf.data.Dataset.from_tensor_slices((train_data, train_labels))
+  train_dataset = train_dataset.shuffle(data_len)
+  print("full train_dataset length: ", train_dataset.__len__())
+  train_dataset = train_dataset.take(train_size_using_rate)
+  print("train_dataset after take only train_rate length: ", train_dataset.__len__())
 
-  test_dataset = tf.data.Dataset.from_tensor_slices((test_data,test_labels))
-  test_dataset = test_dataset.batch(BATCH_SIZE,  drop_remainder = DROP_REMAINDER)
+  train_dataset = train_dataset.batch(BATCH_SIZE, drop_remainder=args.drop_reminder)
 
-  print(train_dataset.__len__())
-  print(test_dataset.__len__())
-  print(train_dataset.take(1))
+  test_dataset = tf.data.Dataset.from_tensor_slices((test_data, test_labels))
+  test_dataset = test_dataset.batch(BATCH_SIZE, drop_remainder=args.drop_reminder)
+
+  print("test_dataset length: ", test_dataset.__len__())
+  print("train_dataset.take(1): ", train_dataset.take(1))
 
   # Generator
-  g_model = make_generator_model(inputSize=inputSize, latent_dim=latent_dim, imageDim=imageDim)
+  g_model = make_generator_model(inputSize=input_size, latent_dim=latent_dim, imageDim=image_dim)
   print(g_model.summary())
 
   # sanity check code:
@@ -215,7 +241,7 @@ if __name__ == '__main__':
   print(genOut.shape)
 
   # Discriminator
-  d_model = make_my_discriminator_model(imageDim=imageDim)
+  d_model = make_my_discriminator_model(imageDim=image_dim)
 
 
   print(d_model.summary())
@@ -233,17 +259,21 @@ if __name__ == '__main__':
   gen_optimizer = keras.optimizers.Adam(1e-4)
 
 
-  gan = GanNNet(discriminator=d_model,generator=g_model,latent_dim=latent_dim, label_rate=1)# use 100% labeled data
+  gan = GanNNet(discriminator=d_model,generator=g_model,latent_dim=latent_dim, label_rate=args.label_rate)
   gan.compile(d_optimizer=disc_optimizer, g_optimizer= gen_optimizer,loss_fn=loss_values)
 
-  epochs = 200
-
-  csv_logger = keras.callbacks.CSVLogger(f'console_output/training_{run_name}.csv')
+  csv_logger = keras.callbacks.CSVLogger(get_logger_path(args))
 
   cbks = [csv_logger]
 
-  history = gan.fit(train_dataset.take(trainSize),epochs=epochs,validation_data=train_dataset.take(valSize), callbacks=cbks)
+  history = gan.fit(train_dataset, epochs=args.epochs, validation_data=train_dataset.take(val_size), callbacks=cbks)
 
-  gan.evaluate(test_dataset.take(testSize))
+  gan.save_weights(get_model_path(args))
 
+  gan.evaluate(test_dataset.take(test_size))
+
+
+  print(f'Train size: {train_size}')
+  print(f'Test size: {test_size}')
+  print(f'Train size after train rate: {train_size_using_rate}')
   print("The End")

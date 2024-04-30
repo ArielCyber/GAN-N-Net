@@ -2,3 +2,7 @@
 .idea/
 *.png
 .history/
+console_output/*
+datasets/*flash*
+*.zip
+.vscode
