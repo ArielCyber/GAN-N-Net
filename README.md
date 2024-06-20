@@ -81,6 +81,16 @@ mini.py & mini100.py accepts the following arguments to customize its behavior:
 
 * **`--batch_size`** (Optional): The batch size used during training. Default is 64.
 
+* **`--drop_reminder`** (Optional): Drop the last batch if it is not full. Default is True.
+
+* **`--label_rate`** (Optional): Rate of labels in the training data. Default is 1 (all).
+
+* **`--epochs`** (Optional): Number of epochs to train. Default is 200.
+
+* **`--train_rate`** (Optional): Rate of training data. Default is 1 (all).
+
+* **`--save_model`** (Optional): Save the model after training. Default is False.
+
 **Example Usage:**
 
 ```bash
