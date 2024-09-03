@@ -4,5 +4,6 @@
 .history/
 console_output/*
 datasets/*flash*
+datasets/*new_raw_data
 *.zip
 .vscode

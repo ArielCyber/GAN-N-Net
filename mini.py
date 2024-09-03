@@ -6,6 +6,7 @@ import glob
 from generate_plot import create_plot_comarison_graph
 from tools import get_logger_path, get_model_path, get_samples_path, load_data, print_gpu_availability
 from gan_n_net import GanNNet, make_my_discriminator_model, make_generator_model
+from sklearn.model_selection import train_test_split
 
 def loss_values(d_real_features,fake_features,labels,label_rate):
     
@@ -89,12 +90,14 @@ if __name__ == '__main__':
       labelIndex += 1
       dataForFile = load_data(file)
       data.append(dataForFile)
-      labelsForFile = np.ones(dataForFile.__len__()) * labelIndex
+      labelsForFile = np.ones(dataForFile.shape[0]) * labelIndex
       labels.append(labelsForFile)
 
   data = np.vstack(data)
   labels = np.hstack(labels)
-  data_len = data.__len__()
+
+  # calculate train, val, and test size
+  data_len = data.shape[0]
   test_size = int(args.test_split * data_len)
   val_size = int(args.val_split * args.train_rate * data_len)
   train_size = data_len - test_size
@@ -104,37 +107,43 @@ if __name__ == '__main__':
   image_dim = data.shape[-1]
   input_size = image_dim**2
 
-  test_inds = np.random.choice(range(data_len), size=test_size, replace=False)
+  # Split data into test and train/validation sets
+  train_val_data, test_data, train_val_labels, test_labels = train_test_split(
+    data, labels, test_size=test_size, stratify=labels, random_state=42
+  )
 
-  test_data = data[test_inds]
-  test_labels = labels[test_inds]
+  # Further split train/validation into train and validation sets
+  train_data, val_data, train_labels, val_labels = train_test_split(
+    train_val_data, train_val_labels, test_size=val_size, stratify=train_val_labels, random_state=42
+  )
 
-  train_data = np.delete(data, test_inds, 0)
-  train_labels = np.delete(labels, test_inds)
-
+  # Cast and one-hot encode labels
   train_data = tf.cast(train_data, tf.float32)
+  val_data = tf.cast(val_data, tf.float32)
   test_data = tf.cast(test_data, tf.float32)
 
   train_labels = tf.cast(train_labels, tf.int32)
   train_labels = tf.one_hot(train_labels, CLASS_NUM)
 
+  val_labels = tf.cast(val_labels, tf.int32)
+  val_labels = tf.one_hot(val_labels, CLASS_NUM)
+  
   test_labels = tf.cast(test_labels, tf.int32)
   test_labels = tf.one_hot(test_labels, CLASS_NUM)
 
-
   train_dataset = tf.data.Dataset.from_tensor_slices((train_data, train_labels))
-  train_dataset = train_dataset.shuffle(data_len)
-  print("full train_dataset length: ", train_dataset.__len__())
-  train_dataset = train_dataset.take(train_size_using_rate)
-  print("train_dataset after take only train_rate length: ", train_dataset.__len__())
-
-  train_dataset = train_dataset.batch(BATCH_SIZE, drop_remainder=args.drop_reminder)
-
+  val_dataset = tf.data.Dataset.from_tensor_slices((val_data, val_labels))
   test_dataset = tf.data.Dataset.from_tensor_slices((test_data, test_labels))
+
+  # Shuffle and batch datasets
+  train_dataset = train_dataset.shuffle(train_size).batch(BATCH_SIZE, drop_remainder=args.drop_reminder)
+  val_dataset = val_dataset.batch(BATCH_SIZE, drop_remainder=args.drop_reminder)
   test_dataset = test_dataset.batch(BATCH_SIZE, drop_remainder=args.drop_reminder)
 
-  print("test_dataset length: ", test_dataset.__len__())
-  print("train_dataset.take(1): ", train_dataset.take(1))
+  print("Train dataset length: ", len(list(train_dataset)))
+  print("Validation dataset length: ", len(list(val_dataset)))
+  print("Test dataset length: ", len(list(test_dataset)))
+  print("Sample train batch: ", list(train_dataset.take(1)))
 
   # Generator
   g_model = make_generator_model(inputSize=input_size, latent_dim=latent_dim, imageDim=image_dim)
