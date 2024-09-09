@@ -32,13 +32,17 @@ def build_port_TDL(row, min_delta=1e-5):
 
 
 def add_to_df(file_path):
-    df = pd.read_csv(file_path)
+    if isinstance(file_path, str):
+        df = pd.read_csv(file_path)
     df = df[df["new_application_types"]!="other"]
     df['filename'] = file_path.split('/')[-1]
     df['packet_number'] = df['udps.protocol_header_fields_enh'].str.count('\n')
     # this raw convert the nfstream plugin output from string to list of lists - for now it is crashing
     df['udps.protocol_header_fields_enh'] = df['udps.protocol_header_fields_enh'].apply(lambda x: np.array([list(map(int, row.strip().strip('[]').split())) for row in x.strip('[]').split('\n') if row.strip()]))
     df["tdl"] = df.apply(build_port_TDL, axis=1)
+    for idx, row in df.iterrows():
+        tdl = pd.DataFrame(row.tdl, columns=['timetofirst', 'pkts_dir', 'pkts_size'])
+        df.at[idx, 'timetofirst'] = row['tdl']
     return df
 
 
