@@ -1,6 +1,6 @@
 import os
 import numpy as np
-# import tensorflow as tf
+import tensorflow as tf
 
 def get_logger_path(args):
     os.makedirs('console_output', exist_ok=True)
@@ -35,8 +35,8 @@ def load_data(filepath):
 
     return data
 
-# def print_gpu_availability():
-#     device_name = tf.test.gpu_device_name()
-#     if device_name != '/device:GPU:0':
-#       raise SystemError('GPU device not found')
-#     print('Found GPU at: {}'.format(device_name))
+def print_gpu_availability():
+    device_name = tf.test.gpu_device_name()
+    if device_name != '/device:GPU:0':
+      raise SystemError('GPU device not found')
+    print('Found GPU at: {}'.format(device_name))
