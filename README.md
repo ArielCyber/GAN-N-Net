@@ -94,4 +94,4 @@ mini.py & mini100.py accepts the following arguments to customize its behavior:
 **Example Usage:**
 
 ```bash
-python your_script_name.py /path/to/data/ my_training_run --test_split 0.25 
+python mini.py /path/to/data/ my_training_run --test_split 0.25 

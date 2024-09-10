@@ -181,7 +181,7 @@ if __name__ == '__main__':
 
   history = gan.fit(train_dataset, epochs=args.epochs, validation_data=train_dataset.take(val_size), callbacks=cbks)
 
-  gan.save_weights(get_model_path(args))
+  gan.save(get_model_path(args))
 
   gan.evaluate(test_dataset.take(test_size))
 
@@ -191,9 +191,10 @@ if __name__ == '__main__':
   print(f'Train size after train rate: {train_size_using_rate}')
   
 # generate samples
-  samples = np.empty((2000, image_dim, image_dim, 1))
-  predicted_labels = np.empty(2000, dtype=np.int32)
-  for i in range(0, 2000, BATCH_SIZE):
+  num_to_gen = BATCH_SIZE * 20
+  samples = np.empty((num_to_gen, image_dim, image_dim, 1))
+  predicted_labels = np.empty(num_to_gen, dtype=np.int32)
+  for i in range(0, num_to_gen, BATCH_SIZE):
     generated_images = gan.generator(tf.random.normal(shape=(BATCH_SIZE, latent_dim)), training=False)
     samples[i:i+BATCH_SIZE] = generated_images.numpy()
     predicted_labels[i:i+BATCH_SIZE] = np.argmax(gan.discriminator(generated_images).numpy(), axis=1)  

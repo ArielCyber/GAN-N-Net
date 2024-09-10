@@ -165,7 +165,7 @@ if __name__ == '__main__':
 
   history = gan.fit(train_dataset, epochs=args.epochs, validation_data=train_dataset.take(val_size), callbacks=cbks)
 
-  gan.save_weights(get_model_path(args))
+  gan.save(get_model_path(args))
 
   gan.evaluate(test_dataset.take(test_size))
 

@@ -30,10 +30,11 @@ def get_samples_path(args):
     return samples_path
 
 def load_data(filepath):
-    data = np.load(filepath)
+  data = np.load(filepath)
+  if len(data.shape) > 3:
     data = np.squeeze(data,axis=1)
 
-    return data
+  return data
 
 def print_gpu_availability():
     device_name = tf.test.gpu_device_name()
