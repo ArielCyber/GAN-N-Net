@@ -7,11 +7,23 @@ The GAN-N-Net repo contains code written as part of my research to provide a met
 ## Performance Visualizations
 The following graphs show the Validation set convergence accuracy, precision, recall, and F1-score for each dataset:
 
-<div align="center">
-    <img src="git_convergence_plots/quic_davis.png" width="24%" />
-    <img src="git_convergence_plots/quic_paris.png" width="24%" />
-    <img src="git_convergence_plots/mirage22.png" width="24%" />
-    <img src="git_convergence_plots/flash_networks.png" width="24%" />
+<div align="center" style="display: inline-block;">
+    <div style="display: inline-block; width: 24%;">
+        <img src="git_convergence_plots/quic_davis.png" width="100%" />
+        <div>QUIC Davis</div>
+    </div>
+    <div style="display: inline-block; width: 24%;">
+        <img src="git_convergence_plots/quic_paris.png" width="100%" />
+        <div>QUIC Paris-Est Créteil</div>
+    </div>
+    <div style="display: inline-block; width: 24%;">
+        <img src="git_convergence_plots/mirage22.png" width="100%" />
+        <div>Mirage22</div>
+    </div>
+    <div style="display: inline-block; width: 24%;">
+        <img src="git_convergence_plots/flash_networks.png" width="100%" />
+        <div>Flash Networks</div>
+    </div>
 </div>
 
 <div align="center">
