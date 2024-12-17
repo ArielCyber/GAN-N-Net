@@ -7,6 +7,7 @@ from generate_plot import create_plot_comarison_graph
 from tools import get_logger_path, get_model_path, get_samples_path, load_data, print_gpu_availability
 from gan_n_net import GanNNet, make_my_discriminator_model, make_generator_model
 from sklearn.model_selection import train_test_split
+import pandas as pd
 
 def loss_values(d_real_features,fake_features,labels,label_rate):
     
@@ -59,8 +60,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser()
   parser.add_argument('data_dir', help='Directory containing the training data.')
   parser.add_argument('run_name', default='', help='Name of the run, will be used for the log file.')
-  parser.add_argument('--test_split', type=float, default=0.1, required=False, help='Fraction of the data to use for the test set.')
-  parser.add_argument('--val_split', type=float, default=0.3, required=False, help='Fraction of the data to use for the validation set.')
+  parser.add_argument('--test_split', type=float, default=0.3, required=False, help='Fraction of the data to use for the test set.')
+  parser.add_argument('--val_split', type=float, default=0.1, required=False, help='Fraction of the data to use for the validation set.')
   parser.add_argument('--batch_size', type=int, default=64, required=False, help='Batch size to use for training.')
   parser.add_argument('--drop_reminder', default=True, action='store_true', required=False, help='Drop the last batch if it is not full. Default True, action is store_true which means that if this argument is not specified it will be treated as True.')
   parser.add_argument('--label_rate', type=float, default=1, required=False, help='Rate of labels in the training data. Default is 1 (all)')
@@ -95,6 +96,7 @@ if __name__ == '__main__':
 
   data = np.vstack(data)
   labels = np.hstack(labels)
+  label_counts = pd.Series(labels).value_counts()
 
   # calculate train, val, and test size
   data_len = data.shape[0]
@@ -172,8 +174,8 @@ if __name__ == '__main__':
   gen_optimizer = tf.keras.optimizers.Adam(1e-4)
 
 
-  gan = GanNNet(discriminator=d_model,generator=g_model,latent_dim=latent_dim, label_rate=args.label_rate, batch_size=BATCH_SIZE)
-  gan.compile(d_optimizer=disc_optimizer, g_optimizer= gen_optimizer,loss_fn=loss_values)
+  gan = GanNNet(discriminator=d_model, generator=g_model, latent_dim=latent_dim, label_rate=args.label_rate, batch_size=BATCH_SIZE)
+  gan.compile(d_optimizer=disc_optimizer, g_optimizer=gen_optimizer, loss_fn=loss_values)
 
   csv_logger = tf.keras.callbacks.CSVLogger(get_logger_path(args))
 
@@ -201,5 +203,6 @@ if __name__ == '__main__':
   print(f'samples shape:{samples.shape}')
   np.save(get_samples_path(args), samples)
   print(np.bincount(predicted_labels))
-
+  print("distribution of labels:")
+  print(label_counts)
   print("The End")

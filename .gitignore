@@ -1,6 +1,6 @@
 *.pyc
 .idea/
-*.png
+plots
 .history/
 console_output/*
 datasets/*flash*

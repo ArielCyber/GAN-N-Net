@@ -4,6 +4,22 @@
 
 The GAN-N-Net repo contains code written as part of my research to provide a method for reproducing the results presented in the associated paper. The codebase includes implementation of models with and without the proposed GAN-N-Net model enhancements.
 
+## Performance Visualizations
+The following graphs show the Validation set convergence accuracy, precision, recall, and F1-score for each dataset:
+
+<div align="center">
+    <img src="git_convergence_plots/quic_davis.png" width="24%" />
+    <img src="git_convergence_plots/quic_paris.png" width="24%" />
+    <img src="git_convergence_plots/mirage22.png" width="24%" />
+    <img src="git_convergence_plots/flash_networks.png" width="24%" />
+</div>
+
+<div align="center">
+    <em>Validation set convergence accuracy, precision, recall, and F1-score for each dataset</em>
+</div>
+
+Due to space constraints in the paper, we presented convergence results for only two datasets. Here, we provide the complete convergence visualizations for all datasets used in our research.
+
 ## Repository Structure
 
 - `mini.py`: Script to obtain results using our GAN-N-Net model.
@@ -24,7 +40,7 @@ pip install -r requirements.txt
 Clone the repository to your local machine:
 
 ```bash
-git clone https://github.com/[username]/GAN-N-Net.git
+git clone https://github.com/ArielCyber/GAN-N-Net.git
 ```
 ```bash
 cd GAN-N-Net
