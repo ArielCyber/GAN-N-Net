@@ -3,7 +3,7 @@ import tensorflow as tf
 import numpy as np 
 from tensorflow import keras
 import glob
-from tensorflow.keras import layers,Model
+# from tensorflow.keras import layers,Model
 
 def make_my_discriminator_model(imageDim): #(6_7)
     input = keras.Input(shape=(imageDim,imageDim,1))
@@ -19,6 +19,6 @@ def make_my_discriminator_model(imageDim): #(6_7)
     x = keras.layers.GlobalAveragePooling2D()(x)
     
     #x = keras.layers.Dense(4)(x)
-    model = Model(input,x,name='discriminator')
+    model = tf.keras.Model(input,x,name='discriminator')
     return model
 

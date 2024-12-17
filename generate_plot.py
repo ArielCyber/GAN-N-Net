@@ -93,7 +93,11 @@ def create_plot_comarison_graph(csv_input_1, csv_input_2, output_path, test_1_la
 if __name__ == '__main__':
     # QUIC Davis - quic text
     # QUIC Paris-Est Créteil - quic pcap
-    dataset_name = "QUIC Davis"
+    dataset_name = "mirage22"
+
+    # create folder plost if not exists
+    if not os.path.exists('plots'):
+        os.makedirs('plots')
 
     if dataset_name == "QUIC Davis":  # quic text
         gan_path = "console_output/training_quic_text_gan.csv"
@@ -109,6 +113,14 @@ if __name__ == '__main__':
 
         # plot_label_1 = "QUIC Paris-Est Créteil with GAN-N-Net"
         # plot_label_2 = "QUIC Paris-Est Créteil"
+
+    elif dataset_name == "mirage22":  # quic pcap
+        gan_path = "console_output/training_mirage22_100_training_200_epochs.csv"
+        no_gan_path = "console_output/training_mirage22_100_training_200_epochs_no_gan.csv"
+        output_plot_path = "plots/vertical_mirage22_100_gan_vs_nogan.png"
+
+        # plot_label_1 = "Mirage 22 with GAN-N-Net"
+        # plot_label_2 = "Mirage 22"
 
     plot_label_1 = "With GAN-N-Net"
     plot_label_2 = "Basic Classification"
