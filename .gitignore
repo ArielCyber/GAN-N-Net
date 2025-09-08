@@ -7,3 +7,4 @@ datasets/*flash*
 datasets/*new_raw_data
 *.zip
 .vscode
+.venv/
